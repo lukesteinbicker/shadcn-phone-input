@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { isValidPhoneNumber } from "react-phone-number-input";
-import { z } from "zod";
+import z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { toast } from "@/components/ui/use-toast";
 
 const FormSchema = z.object({
   phone: z
@@ -31,14 +30,7 @@ export function StandaloneFormExample() {
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+    //DO SOMETHING WITH THE DATA
   }
 
   return (
@@ -54,20 +46,17 @@ export function StandaloneFormExample() {
             <FormItem className="flex flex-col items-start">
               <FormLabel className="text-left">Phone Number</FormLabel>
               <FormControl className="w-full">
-                <PhoneInput placeholder="Enter a phone number" {...field} />
+                <PhoneInput
+                  defaultCountry="US"
+                  countryCallingCodeEditable={false}
+                  international={true}
+                  {...field}
+                />
               </FormControl>
-              <FormDescription className="text-left">
-                Enter a phone number
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <pre>
-          <code className="text-foreground">
-            {JSON.stringify(form.watch("phone"), null, 2)}
-          </code>
-        </pre>
         <Button type="submit">Submit</Button>
       </form>
     </Form>
