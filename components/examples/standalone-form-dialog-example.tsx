@@ -30,7 +30,7 @@ export function StandaloneFormExample() {
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    //DO SOMETHING WITH THE DATA
+    console.log(data);
   }
 
   return (
@@ -49,7 +49,7 @@ export function StandaloneFormExample() {
                 <PhoneInput
                   defaultCountry="US"
                   countryCallingCodeEditable={false}
-                  international={true}
+                  international={false}
                   {...field}
                 />
               </FormControl>

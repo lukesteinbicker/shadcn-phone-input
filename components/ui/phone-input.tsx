@@ -27,20 +27,89 @@ type PhoneInputProps = Omit<
 > &
   Omit<RPNInput.Props<typeof RPNInput.default>, "onChange"> & {
     onChange?: (value: RPNInput.Value) => void;
+    defaultCountry?: RPNInput.Country;
   };
 
 const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> =
   React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
-    ({ className, onChange, value, ...props }, ref) => {
+    ({ className, onChange, value, defaultCountry = "US", ...props }, ref) => {
+      const [country, setCountry] = React.useState<RPNInput.Country>(defaultCountry);
+
+      // Update country when defaultCountry changes
+      React.useEffect(() => {
+        setCountry(defaultCountry);
+      }, [defaultCountry]);
+
+      const InputComponentWithCountryCode = React.useMemo(() => {
+        const Component = React.forwardRef<
+          HTMLInputElement,
+          React.ComponentProps<"input">
+        >(({ className, onKeyDown, ...inputProps }, inputRef) => {
+          const countryCode = country ? `+${RPNInput.getCountryCallingCode(country)}` : "";
+          const isUS = country === "US";
+          
+          const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (isUS) {
+              const input = e.currentTarget;
+              const value = input.value;
+              // Remove all non-digit characters to count actual digits
+              const digitsOnly = value.replace(/\D/g, '');
+              
+              // If we already have 10 digits and user is trying to type a digit, prevent it
+              if (digitsOnly.length >= 10 && /[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                return;
+              }
+            }
+            
+            // Call the original onKeyDown handler if it exists
+            if (onKeyDown) {
+              onKeyDown(e);
+            }
+          };
+          
+          return (
+            <div className="relative flex items-center">
+              {countryCode && (
+                <span className="absolute left-3 z-10 text-sm text-muted-foreground pointer-events-none select-none">
+                  {countryCode}
+                </span>
+              )}
+              <Input
+                className={cn(
+                  "rounded-e-lg rounded-s-none",
+                  countryCode && "pl-10",
+                  className
+                )}
+                {...inputProps}
+                onKeyDown={handleKeyDown}
+                ref={inputRef}
+              />
+            </div>
+          );
+        });
+        Component.displayName = "InputComponentWithCountryCode";
+        return Component;
+      }, [country]);
+
       return (
         <RPNInput.default
           ref={ref}
           className={cn("flex", className)}
           flagComponent={FlagComponent}
-          countrySelectComponent={CountrySelect}
-          inputComponent={InputComponent}
+          countrySelectComponent={(props) => (
+            <CountrySelect
+              {...props}
+              onChange={(newCountry) => {
+                setCountry(newCountry);
+                props.onChange(newCountry);
+              }}
+            />
+          )}
+          inputComponent={InputComponentWithCountryCode}
           smartCaret={false}
           value={value || undefined}
+          defaultCountry={defaultCountry}
           /**
            * Handles the onChange event.
            *
@@ -57,18 +126,6 @@ const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> =
     },
   );
 PhoneInput.displayName = "PhoneInput";
-
-const InputComponent = React.forwardRef<
-  HTMLInputElement,
-  React.ComponentProps<"input">
->(({ className, ...props }, ref) => (
-  <Input
-    className={cn("rounded-e-lg rounded-s-none", className)}
-    {...props}
-    ref={ref}
-  />
-));
-InputComponent.displayName = "InputComponent";
 
 type CountryEntry = { label: string; value: RPNInput.Country | undefined };
 
